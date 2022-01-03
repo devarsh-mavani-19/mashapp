@@ -1,5 +1,10 @@
 import React, { useEffect, useState } from 'react'
-import { Alert, createTheme, responsiveFontSizes } from '@mui/material'
+import {
+  Alert,
+  CircularProgress,
+  createTheme,
+  responsiveFontSizes
+} from '@mui/material'
 import MUIDataTable from 'mui-datatables'
 import { createPortal } from 'react-dom'
 import MoreInfo from './MoreInfo'
@@ -66,6 +71,7 @@ function Index () {
 
   const [data, setData] = useState([])
   const [loading, setLoading] = useState(false)
+  const [showingApproved, setShowingApproved] = useState(false)
   const [showMoreDetails, setShowMoreDetails] = useState({
     show: false,
     data: {}
@@ -84,12 +90,19 @@ function Index () {
   console.log(`toast `, toast.show ? 'yes' : 'no')
 
   useEffect(async () => {
+    loadNotApproved()
+  }, [])
+
+  const loadNotApproved = async () => {
+    setShowingApproved(false)
+    setLoading(true)
     const res = await fetch(
       `http://newmashserver.rpsoftech.net:3333/collection/get_collection`
     )
     const json = await res.json()
     let op = []
     for (let i = 0; i < json.length; i++) {
+      if (json[i].approve != 0) continue
       op.push({
         ...json[i],
         image: <img src={json[i].file_name} width={80} />,
@@ -110,8 +123,64 @@ function Index () {
         )
       })
     }
+    setLoading(false)
     setData(op)
-  }, [])
+  }
+
+  const loadApproved = async () => {
+    setShowingApproved(true)
+    setLoading(true)
+    const res = await fetch(
+      `http://newmashserver.rpsoftech.net:3333/collection/get_collection`
+    )
+    const json = await res.json()
+    let op = []
+    for (let i = 0; i < json.length; i++) {
+      if (json[i].approve != 1) continue
+      op.push({
+        ...json[i],
+        image: <img src={json[i].file_name} width={80} />,
+        action: (
+          <button
+            onClick={() => {
+              setShowMoreDetails({
+                show: true,
+                data: {
+                  ...json[i]
+                }
+              })
+            }}
+            className='btn btn-success'
+          >
+            View
+          </button>
+        )
+      })
+    }
+    setLoading(false)
+    setData(op)
+  }
+
+  let style1, style2
+  style1 = showingApproved
+    ? {
+        cursor: 'pointer'
+      }
+    : {
+        backgroundColor: '#0F062B',
+        color: 'white',
+        cursor: 'pointer'
+      }
+
+  style2 = showingApproved
+    ? {
+        backgroundColor: '#0F062B',
+        color: 'white',
+        cursor: 'pointer'
+      }
+    : {
+        cursor: 'pointer'
+      }
 
   return (
     <React.Fragment>
@@ -168,28 +237,40 @@ function Index () {
               </div>
               <div class='col-4'>
                 <div
-                  style={{ backgroundColor: '#0F062B', color: 'white' }}
+                  onClick={loadNotApproved}
+                  style={style1}
                   className='rounded'
                 >
                   <p className='p-2 m-2'>New NFT</p>
                 </div>
-                <div className='rounded'>
+                <div className='rounded' onClick={loadApproved} style={style2}>
                   <p className='p-2 m-2'>Approved NFT</p>
                 </div>
-                <div className='rounded'>
-                  <p className='p-2 m-2'>Rejected NFT</p>
-                </div>
               </div>
-              <div class='col-8'>
-                {data.length != 0 ? (
-                  <ThemeProvider theme={theme}>
-                    <MUIDataTable
-                      data={data}
-                      columns={columns}
-                      options={options}
-                    />
-                  </ThemeProvider>
+              <div
+                class='col-8'
+                style={
+                  loading ? { display: 'flex', justifyContent: 'center' } : {}
+                }
+              >
+                {loading ? (
+                  <CircularProgress
+                    style={{ justifyContent: 'center', alignItems: 'center' }}
+                    color='secondary'
+                  />
                 ) : null}
+                <React.Fragment>
+                  {data.length != 0 && !loading ? (
+                    <ThemeProvider theme={theme}>
+                      <MUIDataTable
+                        data={data}
+                        columns={columns}
+                        options={options}
+                        style={{ width: '100%' }}
+                      />
+                    </ThemeProvider>
+                  ) : null}
+                </React.Fragment>
               </div>
             </div>
           </div>

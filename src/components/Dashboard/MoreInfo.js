@@ -27,17 +27,23 @@ function MoreInfo ({ showMoreDetails, handleCloseModal }) {
   let op = []
 
   const approve = async () => {
+    console.log({
+      collection_id: showMoreDetails.data.collection_id,
+      status: 'approve'
+    })
     const res = await fetch(
       `http://newmashserver.rpsoftech.net:3333/collection/status_collection`,
       {
-        body: {
+        body: JSON.stringify({
           collection_id: showMoreDetails.data.collection_id,
           status: 'approve'
-        },
+        }),
+        headers: new Headers({ 'content-type': 'application/json' }),
         method: 'POST'
       }
     )
     const resJson = await res.json()
+    console.log(resJson)
     handleCloseModal('Approved Successfully')
   }
 
@@ -80,9 +86,6 @@ function MoreInfo ({ showMoreDetails, handleCloseModal }) {
             <div className='w-100 d-flex justify-content-between'>
               <button className='btn btn-success' onClick={approve}>
                 Approve
-              </button>
-              <button className='btn btn-danger' onClick={reject}>
-                Reject
               </button>
             </div>
           </div>
